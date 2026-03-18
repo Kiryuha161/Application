@@ -74,7 +74,7 @@ namespace Application.Server
 
             foreach (var module in modules)
             {
-                module.UseModule(app, app.Environment);
+                await module.UseModuleAsync(app, app.Environment);
                 Console.WriteLine($"Модуль инициализирован: {module.ModuleName}");
             }
 

@@ -16,32 +16,13 @@ using System.Text;
 
 namespace Application.Identity
 {
-    public class IdentityModule : IModule
+    public class IdentityModule : ModuleWithDbContext<IdentityDbContext>
     {
-        public string ModuleName => "Identity";
-        private string _schemaName = "identity";
+        public override string ModuleName => "Identity";
+        protected override string SchemaName => "identity";
 
-        public void RegisterServices(IServiceCollection services, IConfiguration configuration)
+        protected override void RegisterModuleServices(IServiceCollection services, IConfiguration configuration)
         {
-            _schemaName = configuration.GetSection("DatabaseSchemas")?["Identity"] ?? "identity";
-
-            var baseConnectionString = configuration.GetConnectionString("PostgresConnection");
-
-            var connectionStringBuilder = new NpgsqlConnectionStringBuilder(baseConnectionString);
-            connectionStringBuilder.SearchPath = _schemaName;
-            var connectionString = connectionStringBuilder.ToString();
-
-            Console.WriteLine($"[Identity] Connection string: {connectionString}");
-
-            services.AddDbContext<IdentityDbContext>(options =>
-            {
-                options.UseNpgsql(connectionString, npgsqlOptions =>
-                {
-                    npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", _schemaName);
-                    npgsqlOptions.MigrationsAssembly(typeof(IdentityDbContext).Assembly.FullName);
-                });
-            });
-
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -64,17 +45,10 @@ namespace Application.Identity
             services.AddAuthorization();
         }
 
-        public void UseModule(IApplicationBuilder app, IWebHostEnvironment env)
+        protected override async Task SeedDataAsync(IServiceProvider serviceProvider)
         {
-            using var scope = app.ApplicationServices.CreateScope();
+            using var scope = serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-            dbContext.Database.Migrate();
-
-            SeedData(dbContext).GetAwaiter().GetResult();
-        }
-
-        private async Task SeedData(IdentityDbContext dbContext)
-        {
 
             if (await dbContext.Roles.AnyAsync())
             {

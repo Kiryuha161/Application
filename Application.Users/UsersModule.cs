@@ -16,40 +16,14 @@ using System.Threading.Tasks;
 
 namespace Application.Users
 {
-    public class UsersModule : IModule
+    public class UsersModule : ModuleWithDbContext<UsersDbContext>
     {
-        public string ModuleName => "Users";
-        private string _schemaName = "users";
+        public override string ModuleName => "Users";
+        protected override string SchemaName => "users";
 
-        public void RegisterServices(IServiceCollection services, IConfiguration configuration)
+        protected override void RegisterModuleServices(IServiceCollection services, IConfiguration configuration)
         {
-            _schemaName = configuration.GetSection("DatabaseSchemas") ? ["Users"] ?? "users";
-
-            var baseConnectionString = configuration.GetConnectionString("PostgresConnection");
-
-            var connectionStringBuilder = new NpgsqlConnectionStringBuilder(baseConnectionString);
-            connectionStringBuilder.SearchPath = _schemaName;
-            var connectionString = connectionStringBuilder.ToString();
-
-            Console.WriteLine($"[Users] Connection string: {connectionString}");
-
-            services.AddDbContext<UsersDbContext>(options =>
-            {
-                options.UseNpgsql(connectionString, npgsqlOptions =>
-                {
-                    npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", _schemaName);
-                    npgsqlOptions.MigrationsAssembly(typeof(UsersDbContext).Assembly.FullName);
-                });
-            });
-
             services.AddScoped<IUserProfileService, UserProfileService>();
-        }
-
-        public void UseModule(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            using var scope = app.ApplicationServices.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<UsersDbContext>();
-            dbContext.Database.Migrate();
         }
     }
 }
