@@ -12,6 +12,16 @@ namespace Application.Server
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+
             // Add services to the container.
 
             builder.Services.AddControllers();
@@ -77,7 +87,6 @@ namespace Application.Server
                 await module.UseModuleAsync(app, app.Environment);
                 Console.WriteLine($"Модуль инициализирован: {module.ModuleName}");
             }
-
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
@@ -89,6 +98,21 @@ namespace Application.Server
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors();
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+                context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+                context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+                if (context.Request.Method == "OPTIONS")
+                {
+                    context.Response.StatusCode = 200;
+                    return;
+                }
+                await next();
+            });
 
             app.UseAuthentication();
             app.UseAuthorization();

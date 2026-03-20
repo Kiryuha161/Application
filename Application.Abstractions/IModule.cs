@@ -34,7 +34,6 @@ namespace Application.Abstractions
 
             Console.WriteLine($"[{ModuleName}] Подключение: {connectionString}");
 
-            // Регистрация DbContext
             services.AddDbContext<TDbContext>(options =>
             {
                 options.UseNpgsql(connectionString, npgsqlOptions =>
@@ -44,7 +43,6 @@ namespace Application.Abstractions
                 });
             });
 
-            // Дополнительные сервисы модуля
             RegisterModuleServices(services, configuration);
         }
 
