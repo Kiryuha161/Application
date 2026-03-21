@@ -34,9 +34,9 @@ namespace Application.Identity.Controllers
 
             return Ok(new
             {
-                token = result.Token,
-                userId = result.User!.Id,
-                email = result.User.Email
+                token = result.Data?.Token,
+                userId = result.Data?.Id,
+                email = result.Data?.Email
             });
         }
 
@@ -53,9 +53,9 @@ namespace Application.Identity.Controllers
 
             return Ok(new
             {
-                token = result.Token,
-                userId = result.User!.Id,
-                email = result.User.Email
+                token = result.Data?.Token,
+                userId = result.Data?.Id,
+                email = result.Data?.Email
             });
         }
     }

@@ -4,23 +4,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Identity.Models
+namespace Application.Abstractions.Common
 {
-    public class AuthResult
+    public class ApiResult<T>
     {
         public bool IsSuccess { get; set; }
-        public string? Token { get; set; }
-        public User? User { get; set; }
+        public T? Data { get; set; }
         public string? Error { get; set; }
 
-        public static AuthResult Success(string token, User user) => new AuthResult
+        public static ApiResult<T> Success(T data) => new()
         {
             IsSuccess = true,
-            Token = token,
-            User = user
+            Data = data
         };
 
-        public static AuthResult Fail(string error) => new AuthResult
+        public static ApiResult<T> Fail(string error) => new()
         {
             IsSuccess = false,
             Error = error

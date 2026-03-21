@@ -1,7 +1,10 @@
-﻿using Application.Identity.Data;
+﻿using Application.Abstractions.Common;
+using Application.Identity.Data;
 using Application.Identity.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
+using Application.Abstractions.DTO.Users;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,8 +15,8 @@ namespace Application.Identity.Services
 {
     public interface IAuthService
     {
-        Task<AuthResult> RegisterAsync(RegisterRequest request);
-        Task<AuthResult> LoginAsync(LoginRequest request);
+        Task<ApiResult<UserDto>> RegisterAsync(RegisterRequest request);
+        Task<ApiResult<UserDto>> LoginAsync(LoginRequest request);
     }
 
     public class AuthService : IAuthService
@@ -29,14 +32,14 @@ namespace Application.Identity.Services
             _tokenService = tokenService;
         }
 
-        public async Task<AuthResult> RegisterAsync(RegisterRequest request)
+        public async Task<ApiResult<UserDto>> RegisterAsync(RegisterRequest request)
         {
             var existingUser = await _dbContext.Users
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (existingUser != null)
             {
-                return AuthResult.Fail("Email уже существует");
+                return ApiResult<UserDto>.Fail("Email уже существует");
             }
 
             var user = new User
@@ -63,10 +66,17 @@ namespace Application.Identity.Services
             var permissions = await GetUserPermissionsAsync(user.Id);
             var token = _tokenService.GenerateToken(user, roles, permissions);
 
-            return AuthResult.Success(token, user);
+            var userDto = new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Token = token
+            };
+
+            return ApiResult<UserDto>.Success(userDto);
         }
 
-        public async Task<AuthResult> LoginAsync(LoginRequest request)
+        public async Task<ApiResult<UserDto>> LoginAsync(LoginRequest request)
         {
             var user = await _dbContext.Users
                 .Include(u => u.UserRoles)
@@ -77,7 +87,7 @@ namespace Application.Identity.Services
 
             if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
             {
-                return AuthResult.Fail("Неверный email или пароль");
+                return ApiResult<UserDto>.Fail("Неверный email или пароль");
             }
 
             user.LastLoginAt = DateTime.UtcNow;
@@ -87,7 +97,14 @@ namespace Application.Identity.Services
             var permissions = await GetUserPermissionsAsync(user.Id);
             var token = _tokenService.GenerateToken(user, roles, permissions);
 
-            return AuthResult.Success(token, user);
+            var userDto = new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Token = token
+            };
+
+            return ApiResult<UserDto>.Success(userDto);
         }
 
         private async Task<List<string>> GetUserRolesAsync(Guid userId)
