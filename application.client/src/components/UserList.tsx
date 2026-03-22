@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { userApi } from '../api/users';
+import { usersApi } from '../api/users';
 
 interface UserDto {
     id: string;
@@ -18,7 +18,7 @@ const UsersList: React.FC = () => {
 
     const loadUsers = async () => {
         try {
-            const response = await userApi.getAll();
+            const response = await usersApi.getAll();
             setUsers(response.data);
         } catch (err: any) {
             setError(err.response?.data?.error || 'Ошибка загрузки пользователей');

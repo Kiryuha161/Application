@@ -1,43 +1,36 @@
-import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import Register from './components/Register'
-import Header from './components/Header'
-import { auth } from './api/auth'
-import { userApi } from './api/users'
-import AuthPage from './components/AuthPage'
-import HomePage from './components/HomePage'
+import { useEffect, useState } from 'react';
+import './App.css';
+import Header from './components/Header';
+import { usersApi } from './api/users';
+import AuthPage from './components/AuthPage';
+import HomePage from './components/HomePage';
+import type { User, AuthMode } from './types';
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [user, setUser] = useState<{ email: string } | null>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [showAuth, setShowAuth] = useState<boolean>(false);
+    const [authMode, setAuthMode] = useState<AuthMode>('login');
 
     useEffect(() => {
         checkAuth();
     }, []);
-
-    const onSuccess = () => {
-
-    }
-
-    const onSwitchToLogin = () => {
-
-    }
 
     const handleLogout = () => {
         localStorage.removeItem("token");
         setIsAuthenticated(false);
         setUser(null);
         setShowAuth(true);
+        setAuthMode('login');
     }
 
     const handleLoginClick = () => {
+        setAuthMode('login');
         setShowAuth(true);
     }
 
     const handleRegisterClick = () => {
+        setAuthMode('register');
         setShowAuth(true);
     }
 
@@ -45,7 +38,7 @@ function App() {
         const token = localStorage.getItem('token');
         if (token) {
             try {
-                const response = await userApi.getCurrent();
+                const response = await usersApi.getCurrent();
                 setUser(response.data);
                 setIsAuthenticated(true);
                 setShowAuth(false);
@@ -60,7 +53,7 @@ function App() {
     };
 
     return (
-        <>
+        <div className="app">
             <Header
                 isAuthenticated={isAuthenticated}
                 userEmail={user?.email}
@@ -68,14 +61,19 @@ function App() {
                 onLoginClick={handleLoginClick}
                 onRegisterClick={handleRegisterClick}
             />
-
-            {!isAuthenticated && showAuth ? (
-                <AuthPage onAuthSuccess={checkAuth} />
-            ) : isAuthenticated ? (
-                <HomePage />
-            ) : null}
-        </>
+            <main className="main">
+                {!isAuthenticated && showAuth ? (
+                    <AuthPage
+                        key={authMode}
+                        onAuthSuccess={checkAuth}
+                        initialMode={authMode}
+                    />
+                ) : isAuthenticated ? (
+                    <HomePage />
+                ) : null}
+            </main>
+        </div>
     )
 }
 
-export default App
+export default App;
